@@ -120,7 +120,7 @@ def build_coverage_report(df: pd.DataFrame, col_map: dict,
             # لو جزء كبير مش اتحول، نجرب dayfirst=True
             if parsed.isna().mean() > 0.5:
                 parsed = pd.to_datetime(work_df[date_col], errors='coerce', dayfirst=True)
-            work_df['_date_str'] = parsed.dt.strftime('%Y-%m-%d')
+            work_df['_date_str'] = parsed.dt.strftime('%Y-%m-%d').fillna('')
     else:
         work_df['_date_str'] = ''
 
@@ -134,7 +134,7 @@ def build_coverage_report(df: pd.DataFrame, col_map: dict,
             (work_df['_date_str'] <= str(end_date)[:10])
         ].copy()
     elif selected_month:
-        covered_df = work_df[work_df['_date_str'].str.startswith(str(selected_month)[:7])].copy()
+        covered_df = work_df[work_df['_date_str'].fillna('').str.startswith(str(selected_month)[:7])].copy()
     else:
         covered_df = work_df.copy()
 
@@ -183,7 +183,7 @@ def build_coverage_report(df: pd.DataFrame, col_map: dict,
                 parsed_pay = pd.to_datetime(pay_work[pay_date_col], errors='coerce', dayfirst=False)
                 if parsed_pay.isna().mean() > 0.5:
                     parsed_pay = pd.to_datetime(pay_work[pay_date_col], errors='coerce', dayfirst=True)
-                pay_work['_pdate_str'] = parsed_pay.dt.strftime('%Y-%m-%d')
+                pay_work['_pdate_str'] = parsed_pay.dt.strftime('%Y-%m-%d').fillna('')
             
             if selected_date:
                 pay_work = pay_work[pay_work['_pdate_str'] == str(selected_date)[:10]]
@@ -193,7 +193,20 @@ def build_coverage_report(df: pd.DataFrame, col_map: dict,
                     (pay_work['_pdate_str'] <= str(end_date)[:10])
                 ]
             elif selected_month:
-                pay_work = pay_work[pay_work['_pdate_str'].str.startswith(str(selected_month)[:7])]
+                pay_work = pay_work[pay_work['_pdate_str'].fillna('').str.startswith(str(selected_month)[:7])]
+
+        def _to_clean_num(val):
+            if pd.isna(val) or val is None:
+                return 0.0
+            if isinstance(val, (int, float)):
+                return float(val)
+            s = str(val).replace(',', '').replace(' ', '').replace('﷼', '').strip()
+            try:
+                return float(s)
+            except:
+                return 0.0
+
+        pay_work[pay_amount_col] = pay_work[pay_amount_col].apply(_to_clean_num)
 
         if not pay_work.empty and pay_amount_col in pay_work.columns:
 
@@ -209,16 +222,12 @@ def build_coverage_report(df: pd.DataFrame, col_map: dict,
                     pay_agg = pay_work.groupby(grp_cols_pay)[pay_amount_col].sum()
                     for k, v in pay_agg.items():
                         k_tuple = k if isinstance(k, tuple) else (k,)
-                        # مطابقة مع مجموعات المحفظة (المشرف، المحصل)
-                        # نطابق آخر عنصر (المحصل) مع coll_col وأول عنصر (المشرف) مع sup_col
                         matched_key = None
                         for portfolio_key in all_collector_groups:
                             pk = portfolio_key if isinstance(portfolio_key, tuple) else (portfolio_key,)
-                            # مطابقة بالاسم (المحصل آخر عنصر)
                             pay_coll_name = str(k_tuple[-1]).strip()
                             port_coll_name = str(pk[-1]).strip()
                             if pay_coll_name == port_coll_name:
-                                # لو فيه مشرف في السدادات نتحقق منه كمان
                                 if len(k_tuple) >= 2 and len(pk) >= 2:
                                     if str(k_tuple[0]).strip() == str(pk[0]).strip():
                                         matched_key = pk
@@ -227,7 +236,7 @@ def build_coverage_report(df: pd.DataFrame, col_map: dict,
                                     matched_key = pk
                                     break
                         if matched_key:
-                            coll_per_group[matched_key] = coll_per_group.get(matched_key, 0.0) + float(v)
+                            coll_per_group[matched_key] = coll_per_group.get(matched_key, 0.0) + _to_clean_num(v)
 
             # ── الطريقة الثانية (احتياطية): Join عن طريق رقم الهوية
             else:
@@ -244,7 +253,7 @@ def build_coverage_report(df: pd.DataFrame, col_map: dict,
                     if not pay_merged.empty:
                         pay_agg = pay_merged.groupby(group_cols)[pay_amount_col].sum()
                         for k, v in pay_agg.items():
-                            coll_per_group[k if isinstance(k, tuple) else (k,)] = float(v)
+                            coll_per_group[k if isinstance(k, tuple) else (k,)] = _to_clean_num(v)
 
     # ── 7. تجميع بيانات العملاء المغطين لكل مجموعة محصلين
     covered_dict = {}
