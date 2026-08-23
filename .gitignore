@@ -1,0 +1,31 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary scratch and environment files
+.env
+.venv/
+env/
+venv/
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Large test/debug files — لا ترفع على GitHub
+*.csv
+test_*.xlsx
+debug_*.csv
+output/
+تقرير_توازن_المحافظ.xlsx
+المحفظه الموزعه.xlsx
+اعمال مجمعه *.xlsx
+الكتروني.xlsx
+سداد الشركه.xlsx
+سداد مهاره.xlsx
+وعود السداد.xlsx
+~$*.xlsx
+STC_System/
+مهاره سيستم/
