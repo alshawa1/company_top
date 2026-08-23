@@ -1367,6 +1367,7 @@ def run_afrad_app():
                         sup = rotation_params["supervisor"]
                         col = rotation_params["collector"]
                         tgt_cols = rotation_params.get("target_collectors")
+                        smart_assign = rotation_params.get("smart_assignment", False)
                         selected_statuses = rotation_params.get("selected_main_statuses")
                         from modules.module6b_rotation import PortfolioRotationModule
                         r = PortfolioRotationModule().run(
