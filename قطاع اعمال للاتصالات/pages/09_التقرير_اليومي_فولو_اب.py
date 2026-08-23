@@ -724,6 +724,7 @@ tab1, tab2 = st.tabs(["👤 أفضل المشرفين", "⭐ أفضل 5 محصل
 
 with tab1:
     if not sup_df.empty:
+        sup_df_show = sup_df[['#', 'المشرف', 'إجمالي التحصيل', 'المعدل %']]
         try:
             st.dataframe(
                 sup_df_show.style.format({'إجمالي التحصيل': '{:,.0f} ﷼', 'المعدل %': '{:.1f}%'})
