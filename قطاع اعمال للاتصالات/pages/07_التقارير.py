@@ -152,13 +152,20 @@ elif rpt_key == "coverage_daily":
 
     with col_d1:
         if period_mode == "📅 يومي":
-            date_mode = st.radio("طريقة اختيار التاريخ:", ["📋 من الشيت", "📅 تقويم"], horizontal=True, key="cov_date_mode")
+            date_mode = st.radio("طريقة اختيار التاريخ:", ["📋 من الشيت (المتوفر)", "📅 تقويم"], horizontal=True, key="cov_date_mode")
             if date_mode == "📅 تقويم":
-                picked = st.date_input("اختر اليوم:", key="cov_cal_input")
+                default_dt = None
+                if unique_dates:
+                    try:
+                        import datetime
+                        default_dt = datetime.datetime.strptime(unique_dates[0], '%Y-%m-%d').date()
+                    except:
+                        pass
+                picked = st.date_input("اختر اليوم:", value=default_dt, key="cov_cal_input")
                 sel_date = picked.strftime('%Y-%m-%d') if picked else None
             else:
                 if unique_dates:
-                    sel_date = st.selectbox("اختر يوم:", unique_dates, index=len(unique_dates)-1)
+                    sel_date = st.selectbox("اختر يوم من تواريخ الشيت:", unique_dates, index=0)
                 else:
                     picked = st.date_input("اختر اليوم:", key="cov_cal_fallback")
                     sel_date = picked.strftime('%Y-%m-%d') if picked else None
@@ -232,6 +239,10 @@ elif rpt_key == "coverage_daily":
             k4.metric("🔇 مغلق",           f"{_safe_int(total_row.get('مغلق')):,}")
             k5.metric("🎯 نسبة التغطية %", f"{_safe_float(total_row.get('نسبة التغطية %')):.1f}%")
             k6.metric("💰 إجمالي التحصيل", f"{_safe_float(total_row.get('إجمالي التحصيل')):,.2f} ﷼")
+
+            if _safe_int(total_row.get('العملاء المغطين')) == 0 and unique_dates:
+                recent_dates = " — ".join(unique_dates[:3])
+                st.info(f"💡 **تنبيه:** لا توجد متابعات مسجلة في شيت المحفظة المرفوع بتاريخ **{period_label}**.\n\nآخر تواريخ متابعات مسجلة في الشيت هي: **{recent_dates}** (يمكنك اختيار تاريخ منها لرؤية إحصائيات التغطية لذلك اليوم).")
 
             # ── مؤشرات المستهدفات ──
             if target_cov_count > 0 or target_coll_amt > 0:
